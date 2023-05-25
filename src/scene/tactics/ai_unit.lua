@@ -50,6 +50,17 @@ function AIUnit:new(view, speed, attackAIs, moveAIProvider, maxHealth, tags)
 
     Runtime:addEventListener("enterFrame", obj)
 
+    local directionObserverFunc = function(direction)
+        if direction == nil then return end
+        if obj.view.setLinearVelocity == nil then
+            obj.direction:stopObserving(directionObserverFunc)
+            return
+        end
+        local dxy = math.vectorOf(direction, obj._speed)
+        obj.view:setLinearVelocity(dxy.x, dxy.y)
+    end
+    obj.direction:observe(directionObserverFunc)
+
     return obj
 end
 
@@ -61,9 +72,9 @@ function AIUnit:removeSelf()
 end
 
 --- AIUnit:sufferAttack
---- @param attacker AttackableView
+--- @param _ AttackableView
 --- @param attack Attack
-function AIUnit:sufferAttack(attacker, attack)
+function AIUnit:sufferAttack(_, attack)
     self._health = self._health - attack.value
     if self._health <= 0 then
         self:removeSelf()
@@ -87,11 +98,6 @@ end
 --- @param event ?
 function AIUnit:enterFrame(event)
     if self.view == nil then return end
-    if self.direction:get() ~= nil then
-        local dtSeconds = (event.time - self._enterFrameData.lastEnteringTime) / 1000
-        local dxy = math.vectorOf(self.direction:get(), self._speed * dtSeconds)
-        self.view:translate(dxy.x, dxy.y)
-    end
     self._moveAI:updateDirection()
     self._attackAIs:onEach(AttackAI.tryAttack)
     self._enterFrameData.lastEnteringTime = event.time
