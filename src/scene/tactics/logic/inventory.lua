@@ -33,6 +33,13 @@ function Inventory:remove(i)
     self:_notifyItemsObservers()
 end
 
+--- Inventory:remove
+--- @param item InventoryItem
+function Inventory:removeItem(item)
+    table.removeValue(self.items, item)
+    self:_notifyItemsObservers()
+end
+
 --- Inventory:use
 --- @param i number
 function Inventory:use(i)

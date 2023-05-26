@@ -11,7 +11,8 @@ require "src.common.util.structs"
 isTest = false
 
 baseTags = {
-    container = "Container"
+    container = "Container",
+    item = "Item"
 }
 
 levelConfig = {

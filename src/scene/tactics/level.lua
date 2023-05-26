@@ -8,6 +8,7 @@ require "src.scene.tactics.hero_listeners"
 require "src.scene.tactics.configs"
 require "src.scene.tactics.hero"
 require "src.scene.tactics.chest"
+require "src.scene.tactics.base.action_area"
 require "src.scene.tactics.attack"
 require "src.scene.tactics.resources"
 require "src.scene.tactics.ui.inventory"
@@ -48,7 +49,7 @@ end
 local function foodView(_, group, xy)
     local foodView = display.newCircle(group, xy.x, xy.y, foodConfig.radius)
     timer.performWithDelay(50, function()
-        if foodView == nil then return end
+        if foodView.parent == nil then return end
         physics.addBody(foodView, "dynamic")
     end) -- TODO search more on this https://stackoverflow.com/questions/54293622/lua-corona-sdk-physics-addbody
     foodView.fill = foodConfig.fill
@@ -58,6 +59,41 @@ local function foodView(_, group, xy)
     return view
 end
 --endregion
+
+---anyItemView
+---@param item { name: string, tag: string } | { name: string, tag: string, sheet, sequenceData }
+---@param group any[]
+---@param xy XY
+function anyItemView(item, group, xy)
+    local view
+    if item.fillingData.sheet == nil then
+        view = display.newRect(group, xy.x, xy.y, 8, 8) -- TODO move out item size
+        view.fill = item.fillingData
+    else
+        view = display.newSprite(group, item.fillingData.sheet, item.fillingData.sequenceData)
+        view.x, view.y = xy:unpack()
+        view:play()
+    end
+    timer.performWithDelay(50, function()
+        if view.parent == nil then return end
+        physics.addBody(view, "dynamic")
+        view.isFixedRotation = true
+    end)
+    view.tag = baseTags.item
+    view.tags = { baseTags.item }
+    view.item = item
+    return view
+end
+
+local function insertSkills(inventory, hero)
+    inventory:insert { -- TODO constructor for equipment items
+        name = "magicPush",
+        tag = "magicPush",
+        use = function()
+            hero:equip("magicPush")
+        end
+    }
+end
 
 local function init(scene, levelData)
     local objectsToRemove = {}
@@ -90,21 +126,24 @@ local function init(scene, levelData)
     local inventoryUIXY = XY:new(display.viewableContentWidth - inventoryUISize.width / 2, display.contentCenterY)
     local inventoryUI = InventoryUI:new(inventoryUISize, inventoryUIXY, uiLayer, inventory)
 
-    local playerMeleeAttackArea = AttackArea:new(
-        Size:new(40, 40), -- height is length here
-        function(size, xy, rotation)
-            local view = display.newRect(gameLayer, xy.x, xy.y, size.width, size.height)
-            view.fill = playerMeleeAttackAreaFilling
-            view.rotation = rotation
-            view.zType = "OnTop"
-            return view
-        end,
-        physics
-    )
-    local hero = Hero:new(gameLayer, playerMeleeAttackArea, Attack:new(5), levelData.startPosition)
+    local hero = Hero:new(gameLayer, levelData.startPosition, physics)
     table.insert(objectsToRemove, hero)
     hero:addHealthListener(function(newHealth, _, _) if newHealth <= 0 then composer.gotoScene("src.scene.death.scene") end end)
     hero:addCollisionListener(PlayerSteppedOnFoodListener:new(hero, foodConfig.tag, inventory, levelsAccumulator, levelUpMenu)) -- TODO replace food with any item
+    hero:addCollisionListener {
+        player = hero,
+        triggered = function(_, otherView)
+            if otherView.tags == nil or not table.contains(otherView.tags, baseTags.item) then return end
+            otherView:removeSelf()
+            local item
+            item = { -- TODO constructor for equipment items
+                name = otherView.item.name,
+                tag = otherView.item.tag,
+                use = function() hero:equip(otherView.item.name) end
+            }
+            inventory:insert(item)
+        end
+    }
 
     --region level init
     for _, wallCharacteristics in ipairs(levelData.walls) do
@@ -147,9 +186,42 @@ local function init(scene, levelData)
     for _, chest in ipairs(levelData.chests) do
         local position = XY.of(chest.position)
         local loot = Iterable:new(chest.loot)
-            :filter(function(type) return type == "food" end) -- TODO
-            :map(function(_) return ContainerItem:new(nil, foodView) end)
-        Chest:new(gameLayer, position, loot, physics)
+            :map(function(type) -- FIXME refactor
+                if type == "food" then return ContainerItem:new(nil, foodView) end
+                if type == "spear" then return ContainerItem
+                    :new(
+                        {
+                            name = "spear",
+                            tag = "spear",
+                            fillingData = {
+                                sheet = graphics.newImageSheet("res/img/inventory/item_icons/spear.png", {
+                                    frames = Iterable.ofCount(10)
+                                        :map(function(i)
+                                            return {
+                                                x = 5 * i,
+                                                y = 0,
+                                                width = 5,
+                                                height = 32
+                                            }
+                                        end)
+                                }),
+                                sequenceData = {
+                                    name = "idle",
+                                    start = 1,
+                                    count = 10,
+                                    time = 1000
+                                }
+                            }
+                        },
+                        anyItemView
+                    )
+                end
+            end)
+        if chest.openable then
+            OpenableChest:new(gameLayer, position, loot, physics)
+        else
+            Chest:new(gameLayer, position, loot, physics)
+        end
     end
     for _, specialObject in ipairs(levelData.specialObjects) do
         local position = XY.of(specialObject.position)
@@ -158,6 +230,7 @@ local function init(scene, levelData)
     end
     --endregion
 
+    insertSkills(inventory, hero)
     HealthBarUI:new(uiLayer, hero):show()
     shadowing:onPlayerUpdateLocations { levelData.startLocation }
 

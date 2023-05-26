@@ -1,5 +1,6 @@
 require "src.common.util.structs"
 require "src.scene.tactics.util.math_ext"
+require "src.scene.tactics.attack"
 
 --- @class Turret
 --- @field _calculateShootAngleFor fun(selfXY: XY, target: Target): number
@@ -57,6 +58,8 @@ function Turret:shoot(xy, attacker, attack, target, hitDurationMillis, speed, ma
         end) -- can be replaced with pull of objects that must be created after collision events
         if not self._pushing then projectile:removeSelf() end
     end
+    projectile.tags = { Attackable.tag }
+    projectile.object = { view = projectile }
     projectile:addEventListener("preCollision")
     if self._pushing then
         projectile.collision = function(_, _) projectile:removeSelf() end

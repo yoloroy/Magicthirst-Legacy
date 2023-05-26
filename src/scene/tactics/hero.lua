@@ -3,9 +3,18 @@ local heroFilling = require("res.characters.hero_filling")
 require "src.scene.tactics.resources"
 require "src.scene.tactics.attack"
 require "src.scene.tactics.base.attackable"
+require "src.scene.tactics.base.action_state_manipulator"
 require "src.common.util.iter"
 
--- FIXME? Hero is a God Object or will become one soon, should I deal with it?
+--- @class EquipmentAction Friendly/inner abstract class for the Hero, all children are friendly/inner too
+--- @field hero Hero
+--- @field name string
+--- @field actionName string
+--- @field _intervalInSeconds number
+--- @field _durationInSeconds number
+--- @field _lastActionTimeInSeconds number
+local EquipmentAction = {}
+EquipmentAction.__index = EquipmentAction
 
 --- @class Hero : Attackable, HealthProvider
 --- @field _health number
@@ -16,8 +25,11 @@ require "src.common.util.iter"
 --- @field isMoving boolean
 --- @field collisionListeners Iterable<PlayerEventListener>
 --- @field healthListeners Iterable<HealthUpdateListener>
---- @field _meleeAttackArea AttackArea
---- @field _meleeAttack Attack
+--- @field equipmentName string
+--- @field actionName string
+--- @field _stateManipulator ActionStateManipulator
+--- @field _fillingProvider HeroFillingProvider
+--- @field _equipmentAction EquipmentAction
 --- @field _lastAttackTimeSeconds number
 --- @field _enterFrameData { lastEnteringTime: number }
 --- @field _directionalFilling { up: table, down: table, left: table, right: table }
@@ -29,7 +41,9 @@ Hero.__index = Hero
 --- @param meleeAttackArea AttackArea
 --- @param meleeAttack Attack
 --- @return Hero
-function Hero:new(container, meleeAttackArea, meleeAttack, startPosition)
+function Hero:new(container, startPosition, physics) -- fixme refactor attacks
+    EquipmentAction.init(physics, container)
+
     local view = self.createView(container, startPosition)
     view.zType = "HasHeight"
 
@@ -44,14 +58,26 @@ function Hero:new(container, meleeAttackArea, meleeAttack, startPosition)
         _enterFrameData = {
             lastEnteringTime = nil
         },
-        _meleeAttackArea = meleeAttackArea,
-        _meleeAttack = meleeAttack,
         _health = playerConfig.maxHealth,
         _lastAttackTimeSeconds = system.getTimer() / 1000 - playerConfig.attackIntervalSeconds,
-        _directionalFilling = heroFilling.unarmed.idle -- fixme refactor hero state using state machine
+        equipmentName = "magicPush",
+        actionName = "idle"
     }
     setmetatable(obj, Attackable)
     setmetatable(obj, self)
+
+    obj._equipmentAction = EquipmentAction.byState(obj)
+    obj._fillingProvider = HeroFillingProvider:new(obj, heroFilling)
+    obj._stateManipulator = ActionStateManipulator:new(obj, {
+        idle = {
+            possibleTransformations = { "attack", "idle" },
+            isPossible = function(_) return true end
+        },
+        attack = {
+            possibleTransformations = { "idle" },
+            isPossible = function(_) return true end
+        }
+    })
 
     view.object = obj
     view.tags = obj.tags
@@ -62,6 +88,7 @@ function Hero:new(container, meleeAttackArea, meleeAttack, startPosition)
     return obj
 end
 
+--region hero methods
 function Hero:removeSelf()
     self.view:removeEventListener("collision")
     Runtime:removeEventListener("enterFrame", self)
@@ -88,29 +115,16 @@ end
 
 --- Hero:performAttack
 function Hero:performAttack()
-    if (self._lastAttackTimeSeconds + playerConfig.attackIntervalSeconds) >= system.getTimer() / 1000 then return end
-    self._lastAttackTimeSeconds = system.getTimer() / 1000
-    self._meleeAttackArea:spawnForMelee(
-        XY.of(self.view) + playerConfig.attackOffset,
-        self.movementDirection,
-        playerConfig.meleeAttackDurationMillis,
-        self._meleeAttack,
-        self
-    )
-    self._directionalFilling = heroFilling.spear.attack
-    self:_updateFilling()
-    timer.performWithDelay(playerConfig.meleeAttackDurationMillis, function()
-        self._directionalFilling = heroFilling.spear.idle
-        self:_updateFilling()
-    end)
+    self._equipmentAction:perform()
 end
 
 --- Hero:equip
 --- @field itemName string
 function Hero:equip(itemName) -- TODO
     if not table.containsKey(heroFilling, itemName) then return end
-    -- fixme bug with the animation state
-    self._directionalFilling = heroFilling[itemName].idle -- fixme idle
+    self.equipmentName = itemName
+    self._equipmentAction = EquipmentAction.byState(self)
+    self:_updateFilling()
 end
 
 --- Hero:moveInDirection
@@ -121,7 +135,7 @@ function Hero:changeDirection(degrees)
 end
 
 function Hero:_updateFilling()
-    local filling = self._directionalFilling[directionNameOf(self.movementDirection)]
+    local filling = self._fillingProvider:filling()[directionNameOf(self.movementDirection)]
     self.view.fill = filling
     self.view.anchorX = filling.anchorX
 end
@@ -184,6 +198,7 @@ end
 function Hero:addHealthListener(listener)
     table.insert(self.healthListeners, listener)
 end
+--endregion
 
 --- @class HealthUpdateListener
 --- @field __call fun(self: HealthUpdateListener, newHealth: number, oldHealth: number, maxHealth: number)
@@ -191,3 +206,158 @@ end
 --- @class HealthProvider
 --- @field healthListeners HealthUpdateListener[]
 --- @field addHealthListener fun(self: HealthProvider, listener: HealthUpdateListener)
+
+--- @class HeroFillingProvider
+--- @field dataProvider { equipmentName: string, actionName: string, direction: string, health: number }
+--- @field _fullFilling
+HeroFillingProvider = {}
+HeroFillingProvider.__index = HeroFillingProvider
+
+--- new
+--- @param fullFilling
+function HeroFillingProvider:new(dataProvider, fullFilling)
+    --- @type HeroFillingProvider
+    local obj = { dataProvider = dataProvider, _fullFilling = fullFilling }
+    setmetatable(obj, self)
+    return obj
+end
+
+--- @return { up: table, down: table, left: table, right: table }
+function HeroFillingProvider:filling()
+    local fillingForEquipment = self._fullFilling[self.dataProvider.equipmentName] or self._fullFilling[self._fullFilling.keyDefault]
+    return fillingForEquipment[self.dataProvider.actionName] or fillingForEquipment[fillingForEquipment.keyDefault]
+end
+
+--region Hero.EquipmentAction
+function EquipmentAction:perform()
+    if (self._lastActionTimeInSeconds + self._intervalInSeconds) >= system.getTimer() / 1000 then return end
+    if not self.hero._stateManipulator:tryChangeState(self.actionName) then return end
+    self._lastActionTimeInSeconds = system.getTimer() / 1000
+    self:_action()
+    self.hero:_updateFilling()
+    timer.performWithDelay(self._durationInSeconds * 1000, function()
+        print("time in seconds: "..system.getTimer() / 1000)
+        self.hero._stateManipulator:changeStateBack()
+        self.hero:_updateFilling()
+    end)
+end
+
+function EquipmentAction:_action() error("abstract method") end
+
+--- @class SpearAction : EquipmentAction
+--- @field _attackArea AttackArea
+local SpearAction = {}
+setmetatable(SpearAction, EquipmentAction)
+SpearAction.__index = SpearAction
+
+function SpearAction:new(hero, physics, gameLayer)
+    --- @type SpearAction
+    local obj = {
+        hero = hero,
+        name = "spear",
+        actionName = "attack",
+        _intervalInSeconds = playerConfig.attackIntervalSeconds,
+        _durationInSeconds = playerConfig.meleeAttackDurationMillis / 1000,
+        _lastActionTimeInSeconds = system.getTimer() / 1000 - playerConfig.attackIntervalSeconds,
+        _attackArea = AttackArea:new(
+            Size:new(40, 40), -- height is length here
+            function(size, xy, rotation)
+                local view = display.newRect(gameLayer, xy.x, xy.y, size.width, size.height)
+                view.fill = playerMeleeAttackAreaFilling
+                view.rotation = rotation
+                view.zType = "OnTop"
+                return view
+            end,
+            physics
+        ),
+        _attack = Attack:new(5)
+    }
+    setmetatable(obj, self)
+    return obj
+end
+
+function SpearAction:_action()
+    self._attackArea:spawnForMelee(
+        XY.of(self.hero.view) + playerConfig.attackOffset,
+        self.hero.movementDirection,
+        playerConfig.meleeAttackDurationMillis,
+        self._attack,
+        self.hero
+    )
+end
+
+--- @class MagicPushAction : EquipmentAction
+local MagicPushAction = {}
+setmetatable(MagicPushAction, EquipmentAction)
+MagicPushAction.__index = MagicPushAction
+
+function MagicPushAction:new(hero, physics, gameLayer)
+    --- @type SpearAction
+    local obj = {
+        hero = hero,
+        name = "magicPush",
+        actionName = "attack",
+        _intervalInSeconds = playerConfig.attackIntervalSeconds,
+        _durationInSeconds = playerConfig.meleeAttackDurationMillis / 1000,
+        _lastActionTimeInSeconds = system.getTimer() / 1000 - playerConfig.attackIntervalSeconds,
+        _magicPushArea = ActionArea:new(
+            Size:new(60, 60), -- height is length here
+            function(size, xy, rotation)
+                local view = display.newRect(gameLayer, xy.x, xy.y, size.width, size.height)
+                view.fill = playerMagicPushAreaFilling
+                view.rotation = rotation
+                view.zType = "OnTop"
+                return view
+            end,
+            physics,
+            function(other)
+                if other.view.isBullet then
+                    local vx, vy = other.view:getLinearVelocity()
+                    local speed = math.sqrt(vx * vx + vy * vy) -- TODO create math extension function for getting speed of vector
+                    local vector = math.vectorOf(math.angleOf(math.normalize(XY.of(other.view) - XY.of(hero.view))), speed)
+                    other.view:setLinearVelocity(vector.x, vector.y)
+                    return
+                end
+                -- TODO magic push force constant
+                local vector = math.vectorOf(math.angleOf(math.normalize(XY.of(other.view) - XY.of(hero.view))), 0.1)
+                other.view:applyLinearImpulse(vector.x, vector.y, other.view.x, other.view.y)
+            end
+        )
+    }
+    setmetatable(obj, self)
+    return obj
+end
+
+function MagicPushAction:_action()
+    self._magicPushArea:spawnForMelee(
+        XY.of(self.hero.view) + playerConfig.attackOffset,
+        self.hero.movementDirection,
+        playerConfig.meleeAttackDurationMillis,
+        self.hero
+    )
+end
+
+--- Equipment.byTag
+--- @param hero Hero
+--- @return any
+function EquipmentAction.byState(hero)
+    local self = EquipmentAction
+    if hero.equipmentName == "spear" then
+        return SpearAction:new(hero, self.physics, self.gameLayer)
+    elseif hero.equipmentName == "magicPush" then
+        return MagicPushAction:new(hero, self.physics, self.gameLayer)
+    else
+        print("Invalid state("..hero.equipmentName..") in hero, default state is magicPush")
+        return MagicPushAction:new(hero, self.physics, self.gameLayer)
+    end
+end
+
+--- Equipment.byTag
+--- @param physics
+--- @param gameLayer
+--- @return any
+function EquipmentAction.init(physics, gameLayer)
+    EquipmentAction.physics = physics
+    EquipmentAction.gameLayer = gameLayer
+end
+--endregion

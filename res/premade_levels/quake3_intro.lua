@@ -249,6 +249,9 @@ return {
         { position = { x = 412, y = 256 }, loot = { "food", "food", "food", "food", "food", "food" } },
         { position = { x = 632, y = 256 }, loot = { "food", "food", "food", "food", "food", "food" } },
         --endregion
+        --region start room
+        { position = { x = 920, y = 90 }, loot = { "spear" }, openable = true }
+        --endregion
     },
     enemies = {
         --region nook next to the left room
@@ -263,37 +266,17 @@ return {
         --region right room
         --region line1
         { type = "skeleton", position = { x = 775, y = 608 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 800, y = 608 }, loot = { "food", "food" } },
         { type = "skeleton", position = { x = 825, y = 608 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 850, y = 608 }, loot = { "food", "food" } },
         { type = "skeleton", position = { x = 875, y = 608 }, loot = { "food", "food" } },
         --endregion
         --region line2
-        { type = "skeleton", position = { x = 775, y = 633 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 800, y = 633 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 825, y = 633 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 850, y = 633 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 875, y = 633 }, loot = { "food", "food" } },
-        --endregion
-        --region line3
         { type = "skeleton", position = { x = 775, y = 658 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 800, y = 658 }, loot = { "food", "food" } },
         { type = "spitting_brazier", position = { x = 825, y = 658 } },
-        { type = "skeleton", position = { x = 850, y = 658 }, loot = { "food", "food" } },
         { type = "skeleton", position = { x = 875, y = 658 }, loot = { "food", "food" } },
         --endregion
-        --region line4
-        { type = "skeleton", position = { x = 775, y = 683 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 800, y = 683 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 825, y = 683 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 850, y = 683 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 875, y = 683 }, loot = { "food", "food" } },
-        --endregion
-        --region line5
+        --region line3
         { type = "skeleton", position = { x = 775, y = 708 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 800, y = 708 }, loot = { "food", "food" } },
         { type = "skeleton", position = { x = 825, y = 708 }, loot = { "food", "food" } },
-        { type = "skeleton", position = { x = 850, y = 708 }, loot = { "food", "food" } },
         { type = "skeleton", position = { x = 875, y = 708 }, loot = { "food", "food" } },
         --endregion
         --endregion

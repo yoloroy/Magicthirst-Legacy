@@ -20,6 +20,23 @@ function inventoryItemIconForTag(tag)
             filename = "res/img/inventory/item_icons/food.png"
         }
     end
+    if tag == "spear" then
+        return {
+            type = "image",
+            sheet = graphics.newImageSheet("res/img/inventory/item_icons/spear.png", {
+                width = 5,
+                height = 32,
+                numFrames = 10
+            }),
+            frame = 1
+        }
+    end
+    if tag == "magicPush" then
+        return {
+            type = "image",
+            filename = "res/img/inventory/item_icons/magic_push.png"
+        }
+    end
     error("unknown tag: <"..tag..">")
 end
 
@@ -46,6 +63,11 @@ end
 playerMeleeAttackAreaFilling = {
     type = "image",
     filename = "res/img/attack_swing.png"
+}
+
+playerMagicPushAreaFilling = {
+    type = "image",
+    filename = "res/img/magic_push.png"
 }
 
 testTurretImageFilling = {

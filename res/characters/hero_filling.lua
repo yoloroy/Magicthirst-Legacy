@@ -1,48 +1,22 @@
 local options = {
     width = 32,
     height = 32,
-    numFrames = 12,
-    sheetContentWidth = 96,
+    numFrames = 16,
+    sheetContentWidth = 128,
     sheetContentHeight = 128
 }
 
 local sheet = graphics.newImageSheet("res/characters/hero.png", options)
 
 return {
+    keyDefault = "unarmed",
     unarmed = {
+        keyDefault = "idle",
         idle = {
             down = {
                 type = "image",
                 sheet = sheet,
                 frame = 1,
-                anchorX = 0.5
-            },
-            up = {
-                type = "image",
-                sheet = sheet,
-                frame = 4,
-                anchorX = 0.5
-            },
-            right = {
-                type = "image",
-                sheet = sheet,
-                frame = 7,
-                anchorX = 0.5
-            },
-            left = {
-                type = "image",
-                sheet = sheet,
-                frame = 10,
-                anchorX = 0.5
-            }
-        }
-    },
-    spear = {
-        idle = {
-            down = {
-                type = "image",
-                sheet = sheet,
-                frame = 2,
                 anchorX = 0.5
             },
             up = {
@@ -54,13 +28,97 @@ return {
             right = {
                 type = "image",
                 sheet = sheet,
-                frame = 8,
+                frame = 9,
                 anchorX = 0.5
             },
             left = {
                 type = "image",
                 sheet = sheet,
-                frame = 11,
+                frame = 13,
+                anchorX = 0.5
+            }
+        }
+    },
+    magicPush = {
+        keyDefault = "idle",
+        idle = {
+            down = {
+                type = "image",
+                sheet = sheet,
+                frame = 1,
+                anchorX = 0.5
+            },
+            up = {
+                type = "image",
+                sheet = sheet,
+                frame = 5,
+                anchorX = 0.5
+            },
+            right = {
+                type = "image",
+                sheet = sheet,
+                frame = 9,
+                anchorX = 0.5
+            },
+            left = {
+                type = "image",
+                sheet = sheet,
+                frame = 13,
+                anchorX = 0.5
+            }
+        },
+        attack = {
+            down = {
+                type = "image",
+                sheet = sheet,
+                frame = 4,
+                anchorX = 0.5
+            },
+            up = {
+                type = "image",
+                sheet = sheet,
+                frame = 8,
+                anchorX = 0.5
+            },
+            right = {
+                type = "image",
+                sheet = sheet,
+                frame = 12,
+                anchorX = 0.5
+            },
+            left = {
+                type = "image",
+                sheet = sheet,
+                frame = 16,
+                anchorX = 0.5
+            }
+        }
+    },
+    spear = {
+        keyDefault = "idle",
+        idle = {
+            down = {
+                type = "image",
+                sheet = sheet,
+                frame = 2,
+                anchorX = 0.5
+            },
+            up = {
+                type = "image",
+                sheet = sheet,
+                frame = 6,
+                anchorX = 0.5
+            },
+            right = {
+                type = "image",
+                sheet = sheet,
+                frame = 10,
+                anchorX = 0.5
+            },
+            left = {
+                type = "image",
+                sheet = sheet,
+                frame = 14,
                 anchorX = 0.5
             }
         },
@@ -74,19 +132,19 @@ return {
             up = {
                 type = "image",
                 sheet = sheet,
-                frame = 6,
+                frame = 7,
                 anchorX = 0.5
             },
             right = {
                 type = "image",
                 sheet = sheet,
-                frame = 9,
+                frame = 11,
                 anchorX = 9 / 32
             },
             left = {
                 type = "image",
                 sheet = sheet,
-                frame = 12,
+                frame = 15,
                 anchorX = 23 / 32
             }
         }
