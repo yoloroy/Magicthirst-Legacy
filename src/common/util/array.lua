@@ -63,10 +63,17 @@ end
 
 --- keysOf
 --- @param _table table
-function keysOf(_table)
+function table.keysOf(_table)
     local result = {}
     for k, _ in pairs(_table) do
         table.insert(result, k)
     end
     return result
+end
+
+--- table.containsKey
+--- @param a table
+--- @param key
+function table.containsKey(a, key)
+    return table.contains(table.keysOf(a), key)
 end

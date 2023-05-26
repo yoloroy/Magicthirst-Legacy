@@ -88,12 +88,12 @@ function Iterable:map(func)
     return result
 end
 
---- Iterable:buildFlatMap
+--- Iterable:buildMap
 --- @generic T
 --- @generic R
 --- @param func fun(accumulator: Iterable, t: T)
 --- @return Iterable
-function Iterable:buildFlatMap(func)
+function Iterable:buildMap(func)
     --- @generic R
     --- @type Iterable
     local result = Iterable:new {}
@@ -101,6 +101,15 @@ function Iterable:buildFlatMap(func)
         func(result, v)
     end
     return result
+end
+
+--- Iterable:flatMap
+--- @generic T
+--- @generic R
+--- @param func fun(t: T): R[]
+--- @return Iterable
+function Iterable:flatMap(func)
+    return self:buildMap(function(acc, t) table.insertAll(acc, func(t)) end)
 end
 
 --- Iterable:flatten
@@ -197,7 +206,7 @@ function Iterable:onEach(block)
 end
 
 --- Iterable:callAll
---- @vararg
+--- @vararg any[] args which will become parameters for all function that this list contains
 --- @return Iterable
 function Iterable:callAll(...)
     for _, fun in ipairs(self) do

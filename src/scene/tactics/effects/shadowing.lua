@@ -28,7 +28,7 @@ function Shadowing:new(belongings, range, roomsGraph, startLocations)
         _belongings = belongings,
         _range = range,
         _roomsGraph = roomsGraph,
-        _visibleLocations = Iterable:new(keysOf(roomsGraph)),
+        _visibleLocations = Iterable:new(table.keysOf(roomsGraph)),
         _playerLocations = startLocations
     }
     setmetatable(obj, Shadowing)
@@ -68,8 +68,7 @@ function Shadowing:onPlayerUpdateLocations()
         self:_hideLocation(self._belongings[location] or {})
     end
     self._visibleLocations = Iterable:new(self._playerLocations)
-        :map(function(location) return self._roomsGraph[location] end)
-        :flatten()
+        :flatMap(function(location) return self._roomsGraph[location] end)
         :append(self._playerLocations)
         :onEach(function(location) self:_showLocation(self._belongings[location] or {}) end)
 end
