@@ -181,6 +181,17 @@ function Iterable:sort(comp)
     return result
 end
 
+--- Iterable:sortBy
+--- @generic T
+--- @param map fun(t): 'comparable'
+--- @return Iterable
+function Iterable:sortBy(map)
+    --- @type Iterable
+    local result = Iterable:new(self)
+    table.sort(result, function(a, b) return map(a) < map(b) end)
+    return result
+end
+
 --- Iterable:limit
 --- @generic T
 --- @param count number

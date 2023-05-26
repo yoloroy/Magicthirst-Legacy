@@ -1,4 +1,5 @@
 local skeletonFilling = require("res.characters.skeleton_filling")
+require "src.scene.tactics.base.attackable"
 require "src.scene.tactics.attack"
 require "src.scene.tactics.ai_unit"
 require "src.scene.tactics.configs"

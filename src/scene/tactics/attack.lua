@@ -1,4 +1,6 @@
 require "src.common.util.structs"
+require "src.scene.tactics.base.action_area"
+require "src.scene.tactics.base.attackable"
 
 -- TODO damage types: { kinetic, energetic, magical }
 --- @class Attack
@@ -48,25 +50,7 @@ end
 --- @param attacker Attackable
 --- @param maxAffectedObjectsCount number nillable
 function AttackArea:spawn(xy, rotation, durationMillis, attack, attacker, maxAffectedObjectsCount)
-    local view = self.viewFactory(self.size, xy, rotation)
-    self._physics.addBody(view, "dynamic", { isSensor = true })
-    view.isHitTestable = true
-    local hitObjectsCount = 0
-    view.collision = function(_, event)
-        local otherView = event.other
-        if
-            maxAffectedObjectsCount ~= nil and hitObjectsCount > maxAffectedObjectsCount or
-            otherView.tags == nil or
-            otherView.tags == attacker.tags or
-            not table.contains(otherView.tags, Attackable.tag)
-        then
-            return
-        end
-        otherView.object:sufferAttack(attacker, attack)
-        hitObjectsCount = hitObjectsCount + 1
-    end
-    view:addEventListener("collision")
-    timer.performWithDelay(durationMillis, function() if view.removeSelf ~= nil then view:removeSelf() end end)
+    self:_attackArea(attacker, attack):spawn(xy, rotation, durationMillis, attacker, maxAffectedObjectsCount)
 end
 
 --- AttackArea:spawnForMelee
@@ -77,31 +61,15 @@ end
 --- @param attacker Attackable
 --- @param maxAffectedObjectsCount number nillable
 function AttackArea:spawnForMelee(xy, direction, durationMillis, attack, attacker, maxAffectedObjectsCount)
-    local directionalDelta = self.size:toXY() * math.vectorOf(direction, 0.5) * XY:new(1, 1)
-    local rotation = direction + 90
-    self:spawn(xy + directionalDelta, rotation, durationMillis, attack, attacker, maxAffectedObjectsCount)
+    self:_attackArea(attacker, attack):spawnForMelee(xy, direction, durationMillis, attacker, maxAffectedObjectsCount)
 end
 
---- @class Attackable
---- @field tags table<string>
---- @field view AttackableView
-Attackable = {
-    tag = "Attackable"
-}
-Attackable.__index = Attackable
-
---- Attackable:sufferAttack
---- @param attacker Attackable
---- @param attack Attack
-function Attackable:sufferAttack(attacker, attack)
-    error("TODO: implement")
+function AttackArea:_attackArea(attacker, attack)
+    return ActionArea:new(self.size, self.viewFactory, self._physics, self:_attackAction(attacker, attack))
 end
 
-function Attackable:addDeathListener(listener)
-    if self.deathListeners == nil then
-        self.deathListeners = {}
-    end
-    table.insert(deathListeners, listener)
+function AttackArea:_attackAction(attacker, attack)
+    return function(other) other:sufferAttack(attacker, attack) end
 end
 
 --- @class AttackableView

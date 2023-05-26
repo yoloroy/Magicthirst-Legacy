@@ -1,6 +1,7 @@
 require "src.common.util.iter"
 require "src.common.util.structs"
 require "src.scene.common.iter_of_group"
+require "src.scene.tactics.base.attackable"
 require "src.scene.tactics.attack"
 
 --- @class AttackAI
@@ -42,17 +43,16 @@ end
 --- AttackAI:tryAttack
 --- @return boolean is attack has been performed
 function AttackAI:tryAttack()
-    local currentTime = system.getTimer() -- TODO make currentTime parameter for optimization if it will be necessary
+    local currentTime = system.getTimer()
     if self._lastHitTime + self._cooldownMillis > currentTime then return false end
 
     local attackerXY = XY.of(self._attackerView)
     local maxDistance2 = self._maxDistance * self._maxDistance
-    local affectedObjectsCount = #Iterable
-        .ofChildren(self._gameLayer)
-        :filter(function(o) return o.tags ~= nil and table.contains(o.tags, Attackable.tag) end) -- getting rid of decorations
-        :filter(function(o) return table.intersects(o.tags, self._tagsToAttack) end)
-        :filter(function(o) return XY.of(o):squaredDistanceTo(attackerXY) <= maxDistance2 end) -- getting only close ones
-        :sort(function(o1, o2) return XY.of(o1):squaredDistanceTo(attackerXY) < XY.of(o2):squaredDistanceTo(attackerXY) end)
+    local affectedObjectsCount = #Iterable.ofChildren(self._gameLayer)
+        :filter(function(o) return o.tags ~= nil and table.contains(o.tags, Attackable.tag) end)
+        :filter(function(o) return table.isIntersects(o.tags, self._tagsToAttack) end)
+        :filter(function(o) return XY.of(o):squaredDistanceTo(attackerXY) <= maxDistance2 end)
+        :sortBy(function(o) return XY.of(o):squaredDistanceTo(attackerXY) end) -- NOTE: there is a possibility to optimize, do it if necessary
         :limit(self._maxAffectedObjectsCount)
         :onEach(function(o) self._performAttack(XY.of(o)) end)
 

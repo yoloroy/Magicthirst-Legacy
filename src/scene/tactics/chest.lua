@@ -1,5 +1,6 @@
 require "src.scene.tactics.base.container"
 require "src.scene.tactics.configs"
+require "src.common.util.array"
 
 local FILLING = require("res.img.chest_filling")
 
@@ -44,4 +45,17 @@ end
 
 function Chest:_updateViewForHp()
     self.view.fill = FILLING.forDamage(self._hp / chestConfig.hp)
+end
+
+--- @class OpenableChest : Chest
+OpenableChest = {}
+setmetatable(OpenableChest, Chest)
+OpenableChest.__index = OpenableChest
+
+function OpenableChest:new(group, xy, items, physics)
+    local chest = Chest:new(group, xy, items, physics)
+    chest.view:addEventListener("postCollision", function(event)
+        if event.other.tags == nil or not table.contains(event.other.tags, playerConfig.tag) then return end
+        chest:destroy()
+    end)
 end

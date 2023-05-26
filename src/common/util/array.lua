@@ -52,7 +52,7 @@ end
 --- @param a T[]
 --- @param b T[]
 --- @return boolean true if a contains any of values from b
-function table.intersects(a, b)
+function table.isIntersects(a, b)
     for _, v in ipairs(a) do
         if table.indexOf(b, v) ~= nil then
             return true

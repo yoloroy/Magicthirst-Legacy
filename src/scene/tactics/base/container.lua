@@ -1,6 +1,7 @@
 require "src.common.util.structs"
 require "src.common.util.iter"
 require "src.scene.tactics.configs"
+require "src.scene.tactics.base.attackable"
 
 --- @class ContainerItem Item that can be displayed in menu or be thrown on the floor
 --- @generic V

@@ -2,6 +2,7 @@ local heroFilling = require("res.characters.hero_filling")
 
 require "src.scene.tactics.resources"
 require "src.scene.tactics.attack"
+require "src.scene.tactics.base.attackable"
 require "src.common.util.iter"
 
 -- FIXME? Hero is a God Object or will become one soon, should I deal with it?
