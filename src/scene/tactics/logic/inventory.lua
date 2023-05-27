@@ -40,6 +40,13 @@ function Inventory:removeItem(item)
     self:_notifyItemsObservers()
 end
 
+--- Inventory:update
+--- @param newItems InventoryItem[]
+function Inventory:update(newItems)
+    self.items = newItems
+    self:_notifyItemsObservers()
+end
+
 --- Inventory:use
 --- @param i number
 function Inventory:use(i)

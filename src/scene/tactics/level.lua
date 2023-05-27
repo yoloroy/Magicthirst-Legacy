@@ -89,10 +89,24 @@ local function insertSkills(inventory, hero)
     inventory:insert { -- TODO constructor for equipment items
         name = "magicPush",
         tag = "magicPush",
+        isEquipment = true,
         use = function()
             hero:equip("magicPush")
         end
     }
+end
+
+--- sortInventoryObserver
+--- @param inventory Inventory
+local function sortInventoryObserver(inventory)
+    local isReasonOfUpdate = false
+    return function(_)
+        if isReasonOfUpdate then isReasonOfUpdate = false return end
+        local equipment = Iterable.filter(inventory.items, function(i) return i.isEquipment end)
+        local notEquipment = Iterable.filter(inventory.items, function(i) return not i.isEquipment end)
+        isReasonOfUpdate = true
+        inventory:update(Iterable.append(equipment, notEquipment))
+    end
 end
 
 local function init(scene, levelData)
@@ -126,6 +140,8 @@ local function init(scene, levelData)
     local inventoryUIXY = XY:new(display.viewableContentWidth - inventoryUISize.width / 2, display.contentCenterY)
     local inventoryUI = InventoryUI:new(inventoryUISize, inventoryUIXY, uiLayer, inventory)
 
+    inventory:observe(sortInventoryObserver(inventory))
+
     local hero = Hero:new(gameLayer, levelData.startPosition, physics)
     table.insert(objectsToRemove, hero)
     hero:addHealthListener(function(newHealth, _, _) if newHealth <= 0 then composer.gotoScene("src.scene.death.scene") end end)
@@ -139,6 +155,7 @@ local function init(scene, levelData)
             item = { -- TODO constructor for equipment items
                 name = otherView.item.name,
                 tag = otherView.item.tag,
+                isEquipment = otherView.item.isEquipment,
                 use = function() hero:equip(otherView.item.name) end
             }
             inventory:insert(item)
@@ -193,6 +210,7 @@ local function init(scene, levelData)
                         {
                             name = "spear",
                             tag = "spear",
+                            isEquipment = true,
                             fillingData = {
                                 sheet = graphics.newImageSheet("res/img/inventory/item_icons/spear.png", {
                                     frames = Iterable.ofCount(10)
