@@ -43,6 +43,7 @@ end
 --- Inventory:use
 --- @param i number
 function Inventory:use(i)
+    if i > #self.items then return end
     if self.items[i]:use() then
         self:remove(i)
     end

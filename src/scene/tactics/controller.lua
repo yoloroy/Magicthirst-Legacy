@@ -2,11 +2,12 @@ require "src.common.util.array"
 
 --- pcKeyEventsListener
 --- @param keysConfig PcKeysConfig
---- @param levelObjects
+--- @param levelObjects { player: Hero, inventoryUI: InventoryUI, inventory: Inventory }
 --- @return fun(event): boolean
 function pcKeyEventsListener(keysConfig, levelObjects)
     local player = levelObjects.player
-    local inventory = levelObjects.inventoryUI
+    local inventoryUI = levelObjects.inventoryUI
+    local inventory = levelObjects.inventory
 
     local pressedKeys = {}
 
@@ -51,6 +52,21 @@ function pcKeyEventsListener(keysConfig, levelObjects)
         return somethingHappened
     end
 
+    function inventoryKeys(keyName, phase)
+        if phase ~= "down" then return false end
+
+        if keyName == keysConfig.inventory then
+            inventoryUI:toggle()
+            return true
+        end
+        if tonumber(keyName) ~= nil and tonumber(keyName) > 0 then
+            inventory:use(tonumber(keyName))
+            return true
+        end
+
+        return false
+    end
+
     function other(keyName, phase)
         if phase ~= "down" then return false end
 
@@ -58,10 +74,7 @@ function pcKeyEventsListener(keysConfig, levelObjects)
             player:performAttack()
             return true
         end
-        if keyName == keysConfig.inventory then
-            inventory:toggle()
-            return true
-        end
+
         return false
     end
 
@@ -71,6 +84,7 @@ function pcKeyEventsListener(keysConfig, levelObjects)
         local somethingHappened = false
         somethingHappened = somethingHappened or movement(keyName, phase)
         somethingHappened = somethingHappened or other(keyName, phase)
+        somethingHappened = somethingHappened or inventoryKeys(keyName, phase)
         return somethingHappened
     end
 end

@@ -244,7 +244,8 @@ local function init(scene, levelData)
     return {
         allToRemove = Iterable:new(objectsToRemove),
         player = hero,
-        inventoryUI = inventoryUI
+        inventoryUI = inventoryUI,
+        inventory = inventory
     }
 end
 
