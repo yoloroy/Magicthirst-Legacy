@@ -45,11 +45,7 @@ settings =
         ["plugin.animation"] =
         {
             publisherId = "com.coronalabs"
-        },
-        ["plugin.widget"] =
-        {
-            publisherId = "com.coronalabs"
-        },
+        }
 	},
 
 	--
