@@ -69,7 +69,12 @@ function AttackArea:_attackArea(attacker, attack)
 end
 
 function AttackArea:_attackAction(attacker, attack)
-    return function(other) other:sufferAttack(attacker, attack) end
+    return function(other)
+        if other.sufferAttack ~= nil then
+            other:sufferAttack(attacker, attack)
+        else
+            print("TODO see more about attacked non-attackable objects")
+        end end
 end
 
 --- @class AttackableView
