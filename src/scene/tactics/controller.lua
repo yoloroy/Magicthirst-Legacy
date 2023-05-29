@@ -1,3 +1,5 @@
+local gameplayRuntime = require "src.scene.tactics.gameplay_runtime"
+
 require "src.common.util.array"
 
 --- pcKeyEventsListener
@@ -12,6 +14,10 @@ function pcKeyEventsListener(keysConfig, levelObjects)
     local pressedKeys = {}
 
     function updateDirection()
+        if not gameplayRuntime:isRunning() then
+            player.isMoving = false
+            return
+        end
         player.isMoving = true
         if table.contains(pressedKeys, keysConfig.up) and table.contains(pressedKeys, keysConfig.left) then
             player:changeDirection(225)
@@ -67,8 +73,9 @@ function pcKeyEventsListener(keysConfig, levelObjects)
         return false
     end
 
-    function other(keyName, phase)
+    function action(keyName, phase)
         if phase ~= "down" then return false end
+        if not gameplayRuntime:isRunning() then return end
 
         if keyName == keysConfig.attack then
             player:performAttack()
@@ -83,7 +90,7 @@ function pcKeyEventsListener(keysConfig, levelObjects)
         local phase = event.phase
         local somethingHappened = false
         somethingHappened = somethingHappened or movement(keyName, phase)
-        somethingHappened = somethingHappened or other(keyName, phase)
+        somethingHappened = somethingHappened or action(keyName, phase)
         somethingHappened = somethingHappened or inventoryKeys(keyName, phase)
         return somethingHappened
     end

@@ -1,5 +1,6 @@
 require "src.common.util.structs"
 require "src.scene.tactics.resources"
+local gameplayRuntime = require "src.scene.tactics.gameplay_runtime"
 local widget = require "widget"
 
 --- @class InventoryUIItem : InventoryItem
@@ -40,8 +41,10 @@ end
 
 function InventoryUI:toggle()
     if self._group == nil then
+        gameplayRuntime:isRunning(false)
         self:show()
     else
+        gameplayRuntime:isRunning(true)
         self:hide()
     end
 end

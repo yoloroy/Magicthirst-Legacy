@@ -1,4 +1,5 @@
 local composer = require "composer"
+local gameplayRuntime = require "src.scene.tactics.gameplay_runtime"
 
 require "src.common.util.iter"
 require "src.common.util.array"
@@ -110,6 +111,8 @@ local function sortInventoryObserver(inventory)
 end
 
 local function init(scene, levelData)
+    gameplayRuntime:init(Runtime, true, physics)
+
     local objectsToRemove = {}
     local shadowing = Shadowing:new({}, 1, levelData.roomsGraph, { levelData.startLocation })
     local levelsAccumulator = { unspentLevels = 0 }

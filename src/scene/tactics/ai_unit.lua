@@ -1,3 +1,5 @@
+local gameplayRuntime = require "src.scene.tactics.gameplay_runtime"
+
 require "src.scene.tactics.util.math_ext"
 require "src.scene.tactics.attack"
 require "src.common.util.structs"
@@ -48,7 +50,7 @@ function AIUnit:new(view, speed, attackAIs, moveAIProvider, maxHealth, tags)
     setmetatable(obj, Attackable)
     setmetatable(obj, self)
 
-    Runtime:addEventListener("enterFrame", obj)
+    gameplayRuntime:addEnterFrameListener(obj)
 
     local directionObserverFunc = function(direction)
         if direction == nil then return end
@@ -68,7 +70,7 @@ function AIUnit:removeSelf()
     if self.view == nil then return end
     self.view:removeSelf()
     self.view = nil
-    Runtime:removeEventListener("enterFrame", self)
+    gameplayRuntime:removeEnterFrameListener(self)
 end
 
 --- AIUnit:sufferAttack

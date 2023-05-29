@@ -57,9 +57,9 @@ end
 
 --- Iterable:replace
 --- @generic T
---- @overload Iterable:replace(predicate: fun(t: T): boolean, replacement: T): Iterable
---- @overload Iterable:replace(replacee: T, mapper: fun(t: T): T): Iterable
---- @overload Iterable:replace(replacee: T, replacement: T): Iterable
+--- @overload fun(predicate: (fun(t: T): boolean), replacement: T): Iterable
+--- @overload fun(replacee: T, mapper: fun(t: T): T): Iterable
+--- @overload fun(replacee: T, replacement: T): Iterable
 --- @param predicate fun(t: T): boolean
 --- @param mapper fun(t: T): T
 --- @return Iterable

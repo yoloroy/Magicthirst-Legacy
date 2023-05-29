@@ -1,9 +1,12 @@
 local heroFilling = require("res.characters.hero_filling")
 
+local gameplayRuntime = require "src.scene.tactics.gameplay_runtime"
+
 require "src.scene.tactics.resources"
 require "src.scene.tactics.attack"
 require "src.scene.tactics.base.attackable"
 require "src.scene.tactics.base.action_state_manipulator"
+require "src.common.util.observable"
 require "src.common.util.iter"
 
 --- @class EquipmentAction Friendly/inner abstract class for the Hero, all children are friendly/inner too
@@ -21,7 +24,7 @@ EquipmentAction.__index = EquipmentAction
 --- @field view
 --- @field tags string[]
 --- @field sceneView
---- @field movementDirection number
+--- @field movementDirection Observable Observable number
 --- @field isMoving boolean
 --- @field collisionListeners Iterable<PlayerEventListener>
 --- @field healthListeners Iterable<HealthUpdateListener>
@@ -38,8 +41,8 @@ Hero.__index = Hero
 
 --- Hero:new
 --- @param container
---- @param meleeAttackArea AttackArea
---- @param meleeAttack Attack
+--- @param startPosition XY
+--- @param physics
 --- @return Hero
 function Hero:new(container, startPosition, physics) -- fixme refactor attacks
     EquipmentAction.init(physics, container)
@@ -52,7 +55,7 @@ function Hero:new(container, startPosition, physics) -- fixme refactor attacks
         view = view,
         tags = { playerConfig.tag, Attackable.tag },
         sceneView = container,
-        movementDirection = 0,
+        movementDirection = Observable:new(0),
         collisionListeners = Iterable:new {},
         healthListeners = Iterable:new {},
         _enterFrameData = {
@@ -84,14 +87,15 @@ function Hero:new(container, startPosition, physics) -- fixme refactor attacks
     view.collision = function(_, event) obj:handleCollision(event) end
 
     view:addEventListener("collision")
-    Runtime:addEventListener("enterFrame", obj)
+    gameplayRuntime:addEnterFrameListener(obj)
+
     return obj
 end
 
 --region hero methods
 function Hero:removeSelf()
     self.view:removeEventListener("collision")
-    Runtime:removeEventListener("enterFrame", self)
+    gameplayRuntime:removeEnterFrameListener(self)
 end
 
 --- Hero:createView
@@ -130,29 +134,14 @@ end
 --- Hero:moveInDirection
 --- @param degrees number direction in which player will move
 function Hero:changeDirection(degrees)
-    self.movementDirection = degrees
+    self.movementDirection:set(degrees)
     self:_updateFilling()
 end
 
 function Hero:_updateFilling()
-    local filling = self._fillingProvider:filling()[directionNameOf(self.movementDirection)]
+    local filling = self._fillingProvider:filling()[directionNameOf(self.movementDirection:get())]
     self.view.fill = filling
     self.view.anchorX = filling.anchorX
-end
-
---- Hero:move
---- @param x number
---- @param y number
-function Hero:move(x, y)
-    self.view:translate(x, y)
-end
-
---- Hero:moveInDirection
---- @param degrees number direction in which player will move
---- @param dtSeconds number delta of time between frames
-function Hero:moveInDirection(degrees, dtSeconds)
-    local xy = math.vectorOf(degrees, playerConfig.speedPerSecond * dtSeconds)
-    self:move(xy.x, xy.y)
 end
 
 --- Hero:sufferAttack
@@ -171,12 +160,10 @@ end
 --- @param event ?
 function Hero:enterFrame(event)
     if self.isMoving then
-        local deltaTime = (event.time - self._enterFrameData.lastEnteringTime) / 1000
-        self:moveInDirection(self.movementDirection, deltaTime)
+        self.view:setLinearVelocity(math.vectorOf(self.movementDirection:get(), playerConfig.speedPerSecond):unpack())
     end
     self.sceneView.x = display.contentCenterX - self.view.x
     self.sceneView.y = display.contentCenterY - self.view.y
-    self._enterFrameData.lastEnteringTime = event.time
 end
 
 --- Hero:handleCollision
@@ -279,7 +266,7 @@ end
 function SpearAction:_action()
     self._attackArea:spawnForMelee(
         XY.of(self.hero.view) + playerConfig.attackOffset,
-        self.hero.movementDirection,
+        self.hero.movementDirection:get(),
         playerConfig.meleeAttackDurationMillis,
         self._attack,
         self.hero
@@ -331,7 +318,7 @@ end
 function MagicPushAction:_action()
     self._magicPushArea:spawnForMelee(
         XY.of(self.hero.view) + playerConfig.attackOffset,
-        self.hero.movementDirection,
+        self.hero.movementDirection:get(),
         playerConfig.meleeAttackDurationMillis,
         self.hero
     )
