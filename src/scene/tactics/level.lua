@@ -24,6 +24,11 @@ require "src.scene.tactics.obstacles.wall"
 require "src.scene.tactics.special_objects.teleporter"
 require "fonts"
 
+-- FIXME: move this out
+local itemCreationData = {
+    spear = require "res.items.spear"
+}
+
 local physics = require "physics"
 physics.start()
 physics.setGravity(0, 0)
@@ -208,34 +213,7 @@ local function init(scene, levelData)
         local loot = Iterable:new(chest.loot)
             :map(function(type) -- FIXME refactor
                 if type == "food" then return ContainerItem:new(nil, foodView) end
-                if type == "spear" then return ContainerItem
-                    :new(
-                        {
-                            name = "spear",
-                            tag = "spear",
-                            isEquipment = true,
-                            fillingData = {
-                                sheet = graphics.newImageSheet("res/img/inventory/item_icons/spear.png", {
-                                    frames = Iterable.ofCount(10)
-                                        :map(function(i)
-                                            return {
-                                                x = 5 * i,
-                                                y = 0,
-                                                width = 5,
-                                                height = 32
-                                            }
-                                        end)
-                                }),
-                                sequenceData = {
-                                    name = "idle",
-                                    start = 1,
-                                    count = 10,
-                                    time = 1000
-                                }
-                            }
-                        },
-                        anyItemView
-                    )
+                if type == "spear" then return ContainerItem:new(itemCreationData.spear, anyItemView)
                 end
             end)
         if chest.openable then
