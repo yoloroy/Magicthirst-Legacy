@@ -126,8 +126,6 @@ local function init(scene, levelData)
     local uiLayer = display.newGroup()
     scene.view:insert(gameLayer)
     scene.view:insert(uiLayer)
-    table.insert(objectsToRemove, gameLayer)
-    table.insert(objectsToRemove, uiLayer)
 
     local score = display.newText {
         text = levelsAccumulator.unspentLevels,
@@ -239,6 +237,10 @@ local function init(scene, levelData)
     }
     Runtime:addEventListener("enterFrame", distanceSorter)
     table.insert(objectsToRemove, distanceSorter)
+
+    table.insert(objectsToRemove, gameLayer)
+    table.insert(objectsToRemove, uiLayer)
+    table.insert(objectsToRemove, gameplayRuntime)
 
     return {
         allToRemove = Iterable:new(objectsToRemove),

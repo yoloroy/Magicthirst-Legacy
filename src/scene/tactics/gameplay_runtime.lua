@@ -3,6 +3,7 @@ require "src.common.util.array"
 local GameplayRuntime = {}
 
 function GameplayRuntime:init(runtime, isRunning, physics)
+    self._runtime = runtime
     self._physics = physics
     self._isRunning = isRunning
     self._enterFrameListeners = {
@@ -12,6 +13,11 @@ function GameplayRuntime:init(runtime, isRunning, physics)
     runtime:addEventListener("enterFrame", self)
 end
 
+function GameplayRuntime:removeSelf()
+    self._runtime:removeEventListener("enterFrame", self)
+    self._enterFrameListeners = nil
+end
+
 --- GameplayRuntime:isRunning
 --- @overload fun(): boolean
 --- @param value boolean
@@ -19,7 +25,6 @@ end
 function GameplayRuntime:isRunning(value)
     if value == nil then return self._isRunning end
     self._isRunning = value
-    print("is running: " .. (self._isRunning and "yes" or "no"))
     if self._isRunning then
         self._physics:start()
     else
