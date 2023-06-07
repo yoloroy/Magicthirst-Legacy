@@ -5,8 +5,5 @@ function display.contentCenterXY()
 end
 
 function display.viewableContentStartXY()
-    return XY:new(
-        display.contentCenterX - display.viewableContentWidth / 2,
-        display.contentCenterY - display.viewableContentHeight / 2
-    )
+    return XY:new(display.screenOriginX, display.screenOriginY)
 end

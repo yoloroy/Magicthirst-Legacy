@@ -131,7 +131,7 @@ local function init(scene, levelData)
 
     local score = display.newText {
         text = levelsAccumulator.unspentLevels,
-        x = 20, y = 30,
+        x = display.screenOriginX + 20, y = display.screenOriginY + 30,
         font = commonFont,
         fontSize = 16
     }
