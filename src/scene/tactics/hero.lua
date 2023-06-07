@@ -26,6 +26,7 @@ EquipmentAction.__index = EquipmentAction
 --- @field sceneView
 --- @field movementDirection Observable Observable number
 --- @field isMoving boolean
+--- @field moveAudio
 --- @field collisionListeners Iterable<PlayerEventListener>
 --- @field healthListeners Iterable<HealthUpdateListener>
 --- @field equipmentName string
@@ -96,6 +97,8 @@ end
 function Hero:removeSelf()
     self.view:removeEventListener("collision")
     gameplayRuntime:removeEnterFrameListener(self)
+    audio.pause(self.moveAudio)
+    self.moveAudio = nil
 end
 
 --- Hero:createView
@@ -149,6 +152,7 @@ end
 --- @param attack Attack
 function Hero:sufferAttack(attacker, attack)
     if attacker == self then return end
+    audio.play(hitSound, { loops = 1 })
     local oldHealth = self.health
     self._health = self._health - attack.value
     self.healthListeners:onEach(function(listener) listener(self._health, oldHealth, playerConfig.maxHealth) end)
@@ -160,7 +164,15 @@ end
 --- @param event ?
 function Hero:enterFrame(event)
     if self.isMoving then
+        if self.moveAudio == nil then
+            self.moveAudio = audio.play(stepSound, { loops = -1 })
+        end
         self.view:setLinearVelocity(math.vectorOf(self.movementDirection:get(), playerConfig.speedPerSecond):unpack())
+    else
+        if self.moveAudio ~= nil then
+            audio.pause(self.moveAudio)
+            self.moveAudio = nil
+        end
     end
     self.sceneView.x = display.contentCenterX - self.view.x
     self.sceneView.y = display.contentCenterY - self.view.y
@@ -223,7 +235,6 @@ function EquipmentAction:perform()
     self:_action()
     self.hero:_updateFilling()
     timer.performWithDelay(self._durationInSeconds * 1000, function()
-        print("time in seconds: "..system.getTimer() / 1000)
         self.hero._stateManipulator:changeStateBack()
         self.hero:_updateFilling()
     end)
@@ -257,7 +268,7 @@ function SpearAction:new(hero, physics, gameLayer)
             end,
             physics
         ),
-        _attack = Attack:new(5)
+        _attack = Attack:new(10)
     }
     setmetatable(obj, self)
     return obj
@@ -334,7 +345,6 @@ function EquipmentAction.byState(hero)
     elseif hero.equipmentName == "magicPush" then
         return MagicPushAction:new(hero, self.physics, self.gameLayer)
     else
-        print("Invalid state("..hero.equipmentName..") in hero, default state is magicPush")
         return MagicPushAction:new(hero, self.physics, self.gameLayer)
     end
 end

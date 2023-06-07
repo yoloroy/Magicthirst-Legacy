@@ -85,3 +85,6 @@ skeletonFilling = {
     type = "image",
     filename = "res/img/skeleton.png"
 }
+
+hitSound = audio.loadSound("res/sound/hit1.mp3")
+stepSound = audio.loadSound("res/sound/step2.mp3")
