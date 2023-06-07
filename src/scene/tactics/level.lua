@@ -94,6 +94,9 @@ function anyItemView(item, group, xy)
     return view
 end
 
+---insertSkills
+---@param inventory Inventory
+---@param hero Hero
 local function insertSkills(inventory, hero)
     inventory:insert { -- TODO constructor for equipment items
         name = "magicPush",
@@ -101,6 +104,7 @@ local function insertSkills(inventory, hero)
         isEquipment = true,
         use = function()
             hero:equip("magicPush")
+            hero:performAttack()
         end
     }
 end
@@ -166,7 +170,14 @@ local function init(scene, levelData)
                 name = otherView.item.name,
                 tag = otherView.item.tag,
                 isEquipment = otherView.item.isEquipment,
-                use = function() hero:equip(otherView.item.name) end
+                use = function()
+                    if otherView.item.isEquipment then
+                        hero:equip(otherView.item.name)
+                        hero:performAttack()
+                    else
+                        print("item is not equipment")
+                    end
+                end
             }
             inventory:insert(item)
         end
