@@ -40,22 +40,13 @@ function pcKeyEventsListener(keysConfig, levelObjects)
         end
     end
 
-    function movement(keyName, phase)
-        local somethingHappened = false
+    function movement(keyName, _)
         local movementKeys = { keysConfig.up, keysConfig.down, keysConfig.left, keysConfig.right }
-        if phase == "down" and table.contains(movementKeys, keyName) then
-            if not table.contains(pressedKeys, keyName) then
-                table.insert(pressedKeys, keyName)
-            end
-            somethingHappened = true
-        elseif phase == "up" and table.contains(movementKeys, keyName) then
-            table.remove(pressedKeys, table.indexOf(pressedKeys, keyName))
-            somethingHappened = true
-        end
-        if somethingHappened then
+        if table.contains(movementKeys, keyName) then
             updateDirection()
+            return true
         end
-        return somethingHappened
+        return false
     end
 
     function inventoryKeys(keyName, phase)
@@ -65,9 +56,16 @@ function pcKeyEventsListener(keysConfig, levelObjects)
             inventoryUI:toggle()
             return true
         end
-        if tonumber(keyName) ~= nil and tonumber(keyName) > 0 then
-            inventory:use(tonumber(keyName))
-            return true
+        local number = tonumber(keyName)
+        if number ~= nil then
+            print("pressedKeys: " .. table.concat(pressedKeys, ", "))
+            if table.contains(pressedKeys, "leftCtrl") or table.contains(pressedKeys, "leftControl") then
+                number = 10 + number
+            end
+            if number > 0 then
+                inventory:use(number)
+                return true
+            end
         end
 
         return false
@@ -89,6 +87,11 @@ function pcKeyEventsListener(keysConfig, levelObjects)
         local keyName = event.keyName
         local phase = event.phase
         local somethingHappened = false
+        if phase == "down" and not table.contains(pressedKeys, keyName) then
+            table.insert(pressedKeys, keyName)
+        elseif phase == "up" then
+            table.removeValue(pressedKeys, keyName)
+        end
         somethingHappened = somethingHappened or movement(keyName, phase)
         somethingHappened = somethingHappened or action(keyName, phase)
         somethingHappened = somethingHappened or inventoryKeys(keyName, phase)
