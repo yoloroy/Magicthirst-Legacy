@@ -17,9 +17,7 @@ function teleporter(xy, exitXY, physics, layer)
     view:addEventListener("collision", function(event)
         local other = event.other
         if other.tags == nil or not table.contains(other.tags, playerConfig.tag) then return end
-        print(table.concat(other.tags, ", "))
         timer.performWithDelay(50, function()
-            print(exitXY:toString())
             other.x = exitXY.x
             other.y = exitXY.y
         end)

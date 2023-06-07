@@ -255,7 +255,7 @@ return {
     },
     enemies = {
         --region nook next to the left room
-        { type = "skeleton", position = { x = 182.5, y = 454.5 }, loot = {} },
+        { type = "big skeleton", position = { x = 182.5, y = 454.5 }, loot = { "key" } },
         --endregion
         --region left room
         { type = "skeleton", position = { x = 150, y = 296 }, loot = { "food" } },
@@ -287,6 +287,27 @@ return {
             type = "teleporter",
             position = { x = 850, y = 80 },
             exitXY = { x = 515.5, y = 506 }
+        },
+        {
+            type = "exit door",
+            position = { x = 694, y = 365 },
+            filling = {
+                type = "image",
+                filename = "res/img/exit_door.png",
+                width = 48,
+                height = 64,
+                anchor = { x = 0.5, y = 1 }
+            },
+            predicate = {
+                --- @param inventory Inventory
+                inventory = function(inventory)
+                    for _, i in ipairs(inventory.items) do
+                        if i.name == "key" then return true end
+                    end
+                    return false
+                end
+            },
+            area = { width = 32, height = 24 }
         }
     }
 }

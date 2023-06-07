@@ -1,4 +1,4 @@
-local skeletonFilling = require("res.characters.skeleton_filling")
+local zombieFilling = require("res.characters.zombie_filling")
 require "src.scene.tactics.base.attackable"
 require "src.scene.tactics.attack"
 require "src.scene.tactics.ai_unit"
@@ -11,13 +11,13 @@ require "src.scene.tactics.resources"
 local ATTACK_DURATION_MILLIS = 200
 
 -- TODO make sensor collider for attackable objects with non sensor collider for view at the bottom for movement
-function skeleton(gameLayer, physics, xy, target, loot, _attackOverride, _attackRangeOverride) -- FIXME replace target with targetPosProvider
+function zombie(gameLayer, physics, xy, target, loot, _attackOverride, _attackRangeOverride) -- FIXME replace target with targetPosProvider
     -- TODO class to handle animations
 
     local isAttacking = false -- FIXME refactor
     local placementStrategy = randomCircularPlacementStrategy(1)
 
-    local directionalFilling = skeletonFilling.withTheSpear.idle
+    local directionalFilling = zombieFilling.unarmed.idle
     local view = display.newRect(gameLayer, xy.x, xy.y, 32, 32)
     view.fill = directionalFilling.down
 
@@ -29,12 +29,12 @@ function skeleton(gameLayer, physics, xy, target, loot, _attackOverride, _attack
             halfHeight = 4
         }
     })
-    view.linearDamping = 10
+    view.linearDamping = 20
     view.isFixedRotation = true
     view.anchorY = 0.5 + 12 / 32
 
     local attackArea = AttackArea:new(
-        Size:new(20, _attackRangeOverride or 20),
+        Size:new(16, _attackRangeOverride or 16),
         function(size, xy, _)
             local rect = display.newRect(gameLayer, xy.x, xy.y, size.width, size.height)
             rect.fill = { 0, 0, 0, 0 }
@@ -47,31 +47,31 @@ function skeleton(gameLayer, physics, xy, target, loot, _attackOverride, _attack
     local unit
     unit = AIUnit:new(
         view,
-        40,
+        20,
         {
             AttackAI:new(
                 view,
-                _attackRangeOverride or 20,
+                _attackRangeOverride or 16,
                 1000,
                 1,
                 gameLayer,
                 { playerConfig.tag },
                 function(inDirectionOf)
                     local direction = math.angleOf(math.normalize(inDirectionOf - XY.of(view)))
-                    directionalFilling = skeletonFilling.withTheSpear.attack
+                    directionalFilling = zombieFilling.unarmed.attack
                     isAttacking = true
                     updateView(direction)
-                    attackArea:spawnForMelee(XY.of(view), direction, ATTACK_DURATION_MILLIS, _attackOverride or Attack:new(10), unit)
+                    attackArea:spawnForMelee(XY.of(view), direction, ATTACK_DURATION_MILLIS, _attackOverride or Attack:new(4), unit)
                     timer.performWithDelay(ATTACK_DURATION_MILLIS, function()
-                        directionalFilling = skeletonFilling.withTheSpear.idle
+                        directionalFilling = zombieFilling.unarmed.idle
                         isAttacking = false
                         updateView(direction)
                     end)
                 end
             )
         },
-        function(unit) return MoveAI:new(unit, directionThroughWallsProvider(target, 200, 20)) end,
-        15,
+        function(unit) return MoveAI:new(unit, directionThroughWallsProvider(target, 200, 10)) end,
+        50,
         { Attackable.tag }
     )
 
@@ -101,15 +101,4 @@ function skeleton(gameLayer, physics, xy, target, loot, _attackOverride, _attack
     end
 
     return unit
-end
-
-function bigSkeleton(gameLayer, physics, xy, target, loot)
-    local base = skeleton(gameLayer, physics, xy, target, loot, Attack:new(30))
-    base.view.width = base.view.width * 2
-    base.view.height = base.view.height * 2
-    base._attackAIs[1]._maxDistance = base._attackAIs[1]._maxDistance * 2
-    base._maxHealth = 60
-    base._health = 60
-
-    return base
 end

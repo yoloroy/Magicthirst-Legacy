@@ -18,15 +18,18 @@ require "src.scene.tactics.ui.choice_menu"
 require "src.scene.tactics.ui.health_bar"
 require "src.scene.tactics.effects.distance_sort"
 require "src.scene.tactics.effects.shadowing"
+require "src.scene.tactics.units.zombie"
 require "src.scene.tactics.units.skeleton"
 require "src.scene.tactics.units.spitting_brazier"
 require "src.scene.tactics.obstacles.wall"
 require "src.scene.tactics.special_objects.teleporter"
+require "src.scene.tactics.special_objects.exit_door"
 require "fonts"
 
 -- FIXME: move this out
 local itemCreationData = {
-    spear = require "res.items.spear"
+    spear = require "res.items.spear",
+    key = require "res.items.key",
 }
 
 local physics = require "physics"
@@ -115,6 +118,7 @@ local function sortInventoryObserver(inventory)
     end
 end
 
+-- TODO documentation
 local function init(scene, levelData)
     gameplayRuntime:init(Runtime, true, physics)
 
@@ -194,11 +198,22 @@ local function init(scene, levelData)
         local position = XY.of(enemy.position)
         --- @type Attackable
         local obj
-        if enemy.type == "skeleton" then
-            local loot = Iterable:new(enemy.loot)
+        local loot
+        if enemy.loot ~= nil then
+            local food = Iterable:new(enemy.loot)
                 :filter(function(type) return type == "food" end) -- FIXME
                 :map(function(_) return ContainerItem:new(nil, foodView) end)
+            local keys = Iterable:new(enemy.loot)
+                :filter(function(type) return type == "key" end) -- FIXME
+                :map(function(_) return ContainerItem:new(itemCreationData.key, anyItemView) end)
+            loot = food:append(keys)
+        end
+        if enemy.type == "skeleton" then
             obj = skeleton(gameLayer, physics, position, hero.view, loot)
+        elseif enemy.type == "zombie" then
+            obj = zombie(gameLayer, physics, position, hero.view, loot)
+        elseif enemy.type == "big skeleton" then
+            obj = bigSkeleton(gameLayer, physics, position, hero.view, loot)
         elseif enemy.type == "spitting_brazier" then
             obj = spittingBrazier(gameLayer, physics, position, hero.view)
         else
@@ -211,8 +226,8 @@ local function init(scene, levelData)
         local loot = Iterable:new(chest.loot)
             :map(function(type) -- FIXME refactor
                 if type == "food" then return ContainerItem:new(nil, foodView) end
-                if type == "spear" then return ContainerItem:new(itemCreationData.spear, anyItemView)
-                end
+                if type == "spear" then return ContainerItem:new(itemCreationData.spear, anyItemView) end
+                if type == "key" then return ContainerItem:new(itemCreationData.key, anyItemView) end
             end)
         if chest.openable then
             OpenableChest:new(gameLayer, position, loot, physics)
@@ -221,9 +236,21 @@ local function init(scene, levelData)
         end
     end
     for _, specialObject in ipairs(levelData.specialObjects) do
-        local position = XY.of(specialObject.position)
-        local exitXY = XY.of(specialObject.exitXY)
-        teleporter(position, exitXY, physics, gameLayer)
+        if specialObject.type == "teleporter" then
+            local position = XY.of(specialObject.position)
+            local exitXY = XY.of(specialObject.exitXY)
+            teleporter(position, exitXY, physics, gameLayer)
+        elseif specialObject.type == "exit door" then
+            local position = XY.of(specialObject.position)
+            specialObject.filling.anchor = XY.of(specialObject.filling.anchor)
+            exitDoor(
+                position,
+                specialObject.filling, specialObject.area, specialObject.predicate,
+                function() composer.gotoScene("src.scene.menu.scene") end,
+                inventory, hero,
+                physics, gameLayer
+            )
+        end
     end
     --endregion
 

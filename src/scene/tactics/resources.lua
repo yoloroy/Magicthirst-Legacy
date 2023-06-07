@@ -37,6 +37,12 @@ function inventoryItemIconForTag(tag)
             filename = "res/img/inventory/item_icons/magic_push.png"
         }
     end
+    if tag == "key" then
+        return {
+            type = "image",
+            filename = "res/img/inventory/item_icons/key.png"
+        }
+    end
     error("unknown tag: <"..tag..">")
 end
 

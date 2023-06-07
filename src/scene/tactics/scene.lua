@@ -14,7 +14,7 @@ local keysListener
 
 function scene:show()
     if levelObjects ~= nil then return end
-    levelObjects = level.init(self, require("res.premade_levels.quake3_intro"))
+    levelObjects = level.init(self, require(composer.getVariable(CURRENT_LEVEL_PARAMETER)))
     if os == OS_ENUM_PC then
         keysListener = pcKeyEventsListener(composer.getVariable(PC_KEYS_CONFIG_PARAMETER), levelObjects)
         Runtime:addEventListener("key", keysListener)

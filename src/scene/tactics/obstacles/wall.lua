@@ -21,11 +21,19 @@ function wall(layer, physics, colliderStartXY, colliderEndXY, height, fill, alph
     if not isTest then
         foundation = display.newRect(layer, colliderCenterXY.x, colliderStartXY.y, colliderSize:unpack())
         foundation.fill = fill
+        if fill.tileWidth ~= nil and fill.tileHeight ~= nil then
+            foundation.fill.scaleX = fill.tileWidth / foundation.width
+            foundation.fill.scaleY = fill.tileHeight / foundation.height
+        end
         foundation.anchorY = 0
         physics.addBody(foundation, "static")
     end
     local frontView = display.newRect(layer, colliderCenterXY.x, colliderEndXY.y, viewSize:unpack())
     frontView.fill = fill
+    if fill.tileWidth ~= nil and fill.tileHeight ~= nil then
+        frontView.fill.scaleX = fill.tileWidth / frontView.width
+        frontView.fill.scaleY = fill.tileHeight / frontView.height
+    end
     frontView.alpha = 1
     frontView.anchorY = 1
     frontView.zType = "HasHeight"
