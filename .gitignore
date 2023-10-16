@@ -1,0 +1,7 @@
+/build/
+/Images.xcassets/
+/.idea/
+/AndroidResources/
+/LaunchScreen.storyboardc/
+**/_*/*.kra
+**/*.*~
